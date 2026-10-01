@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Mis Aportes - Pastoral Ingeniería Comercial UC{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <img src="{{ url_for('static', filename='logo.png') }}"
+       alt="Logo" class="page-header-logo">
+  <div class="page-header-text">
+    <h1>💰 Mis Aportes</h1>
+    <p class="subtitle">Historial de todos tus aportes registrados</p>
+  </div>
+</div>
+
+{% if aportes %}
+<div class="section-card">
+  {% if semanas %}
+  <div class="semana-totals">
+    {% for sid, total in totales.items() %}
+    {% set s = semanas.get(sid) %}
+    {% if s %}
+    <div class="semana-total-card">
+      <div class="st-titulo">{{ s.titulo }}</div>
+      <div class="st-monto">${{ "{:,.0f}".format(total) }}</div>
+      {% set meta = s.meta | float %}
+      {% if meta > 0 %}
+      <div class="st-pct">{{ [total / meta * 100, 100] | min | round }}% de la meta</div>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <table class="table table-full">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Semana</th>
+        <th>Descripción</th>
+        <th>Monto</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in aportes %}
+      <tr>
+        <td>{{ a.fecha }}</td>
+        <td>
+          {% set s = semanas.get(a.semana_id) %}
+          {{ s.titulo if s else a.semana_id }}
+        </td>
+        <td>{{ a.descripcion or '—' }}</td>
+        <td class="amount-cell">${{ "{:,.0f}".format(a.monto) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td colspan="3"><strong>Total general</strong></td>
+        <td class="amount-cell">
+          <strong>${{ "{:,.0f}".format(aportes | sum(attribute='monto')) }}</strong>
+        </td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+{% else %}
+<div class="section-card">
+  <p class="empty-state">🙏 Todavía no tenés aportes registrados. ¡Animate!</p>
+</div>
+{% endif %}
+{% endblock %}

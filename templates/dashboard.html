@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - Pastoral Ingeniería Comercial UC{% endblock %}
+
+{% block content %}
+
+<!-- HERO BANNER con logo -->
+<div class="hero-banner">
+  <img src="{{ url_for('static', filename='logo.png') }}"
+       alt="Logo Pastoral" class="hero-logo">
+  <div class="hero-text">
+    <h2>¡Hola, {{ session.get('nombre') }}! 👋</h2>
+    {% if semana %}
+      <div class="hero-semana">{{ semana.titulo }}</div>
+      {% if semana.descripcion %}
+        <div class="hero-desc">{{ semana.descripcion }}</div>
+      {% endif %}
+      {% if semana.fecha_inicio and semana.fecha_fin %}
+        <div class="hero-dates">📅 {{ semana.fecha_inicio }} → {{ semana.fecha_fin }}</div>
+      {% endif %}
+    {% else %}
+      <div class="hero-desc">No hay semana activa en este momento.</div>
+    {% endif %}
+  </div>
+  {% if semana %}
+  <div class="hero-meta">
+    <div class="hero-meta-label">Meta semanal</div>
+    <div class="hero-meta-value">${{ "{:,.0f}".format(meta) }}</div>
+  </div>
+  {% endif %}
+</div>
+
+{% if semana %}
+<!-- STATS GRID -->
+<div class="stats-grid">
+  <div class="stat-card card-personal">
+    <div class="stat-icon">💰</div>
+    <div class="stat-info">
+      <div class="stat-value">${{ "{:,.0f}".format(user_total) }}</div>
+      <div class="stat-label">Mi total recaudado</div>
+    </div>
+  </div>
+
+  <div class="stat-card card-position">
+    <div class="stat-icon">
+      {% if user_pos == 1 %}🥇{% elif user_pos == 2 %}🥈{% elif user_pos == 3 %}🥉{% else %}🏅{% endif %}
+    </div>
+    <div class="stat-info">
+      <div class="stat-value">#{{ user_pos or '—' }}</div>
+      <div class="stat-label">Mi posición en el ranking</div>
+    </div>
+  </div>
+
+  <div class="stat-card card-meta">
+    <div class="stat-icon">🎯</div>
+    <div class="stat-info">
+      <div class="stat-value">${{ "{:,.0f}".format(meta) }}</div>
+      <div class="stat-label">Meta global de la semana</div>
+    </div>
+  </div>
+
+  <div class="stat-card card-global">
+    <div class="stat-icon">🌟</div>
+    <div class="stat-info">
+      <div class="stat-value">${{ "{:,.0f}".format(total_global) }}</div>
+      <div class="stat-label">Total recaudado grupal</div>
+    </div>
+  </div>
+</div>
+
+<!-- PROGRESO -->
+<div class="section-card">
+  <h2>📊 Mi Progreso Personal</h2>
+  <div class="progress-label">
+    <span>${{ "{:,.0f}".format(user_total) }} de ${{ "{:,.0f}".format(meta) }}</span>
+    <span><strong>{{ progreso }}%</strong></span>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar personal" style="width: {{ progreso }}%">
+      {% if progreso > 10 %}{{ progreso }}%{% endif %}
+    </div>
+  </div>
+
+  <h2 style="margin-top:1.75rem;">🌍 Progreso Grupal del Equipo</h2>
+  <div class="progress-label">
+    <span>${{ "{:,.0f}".format(total_global) }} de ${{ "{:,.0f}".format(meta) }}</span>
+    <span><strong>{{ progreso_global }}%</strong></span>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar global" style="width: {{ progreso_global }}%">
+      {% if progreso_global > 10 %}{{ progreso_global }}%{% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- MINI RANKING -->
+<div class="section-card">
+  <div class="section-header">
+    <h2>🏆 Ranking de la Semana (Top 5)</h2>
+    <a href="{{ url_for('ranking_page') }}" class="btn-link">Ver completo →</a>
+  </div>
+  <div class="ranking-mini">
+    {% for r in ranking[:5] %}
+    <div class="ranking-row {% if r.usuario == session.get('usuario') %}my-row{% endif %}">
+      <div class="rank-pos">
+        {% if r.posicion == 1 %}🥇
+        {% elif r.posicion == 2 %}🥈
+        {% elif r.posicion == 3 %}🥉
+        {% else %}#{{ r.posicion }}{% endif %}
+      </div>
+      <div class="rank-name">{{ r.nombre }}</div>
+      <div class="rank-bar-mini">
+        {% if meta > 0 %}
+        <div class="mini-fill" style="width: {{ [r.total / meta * 100, 100] | min | round }}%"></div>
+        {% endif %}
+      </div>
+      <div class="rank-amount">${{ "{:,.0f}".format(r.total) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- MIS ÚLTIMOS APORTES -->
+{% if user_aportes %}
+<div class="section-card">
+  <div class="section-header">
+    <h2>💸 Mis últimos aportes esta semana</h2>
+    <a href="{{ url_for('mis_aportes') }}" class="btn-link">Ver todos →</a>
+  </div>
+  <table class="table">
+    <thead>
+      <tr><th>Fecha</th><th>Descripción</th><th>Monto</th></tr>
+    </thead>
+    <tbody>
+      {% for a in user_aportes[:5] %}
+      <tr>
+        <td>{{ a.fecha }}</td>
+        <td>{{ a.descripcion or '—' }}</td>
+        <td class="amount-cell">${{ "{:,.0f}".format(a.monto) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Ranking - Pastoral Ingeniería Comercial UC{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <img src="{{ url_for('static', filename='logo.png') }}"
+       alt="Logo" class="page-header-logo">
+  <div class="page-header-text">
+    <h1>🏆 Ranking de Recaudación</h1>
+    {% if semana_actual %}
+      <p class="subtitle">{{ semana_actual.titulo }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- SELECTOR DE SEMANA -->
+<div class="section-card">
+  <form method="GET" class="semana-selector">
+    <label for="semana_id">Ver semana:</label>
+    <select name="semana_id" id="semana_id" onchange="this.form.submit()">
+      {% for s in semanas %}
+        <option value="{{ s.id }}" {% if s.id == semana_id_sel %}selected{% endif %}>
+          {{ s.titulo }}{% if s.activa %} ✓ Activa{% endif %}
+        </option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
+<!-- STATS GLOBALES -->
+{% if semana_actual %}
+<div class="stats-grid stats-2">
+  <div class="stat-card card-personal">
+    <div class="stat-icon">💰</div>
+    <div class="stat-info">
+      <div class="stat-value">${{ "{:,.0f}".format(total_global) }}</div>
+      <div class="stat-label">Total recaudado esta semana</div>
+    </div>
+  </div>
+  <div class="stat-card card-meta">
+    <div class="stat-icon">🎯</div>
+    <div class="stat-info">
+      <div class="stat-value">${{ "{:,.0f}".format(meta) }}</div>
+      <div class="stat-label">Meta de la semana</div>
+    </div>
+  </div>
+</div>
+
+<!-- BARRA GLOBAL -->
+{% set prog_global = [total_global / meta * 100, 100] | min | round if meta > 0 else 0 %}
+<div class="section-card">
+  <h3>Progreso Global del Equipo</h3>
+  <div class="progress-label">
+    <span>${{ "{:,.0f}".format(total_global) }}</span>
+    <span><strong>{{ prog_global }}%</strong> de ${{ "{:,.0f}".format(meta) }}</span>
+  </div>
+  <div class="progress-bar-wrap large">
+    <div class="progress-bar global" style="width: {{ prog_global }}%">
+      {% if prog_global > 8 %}{{ prog_global }}%{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- RANKING COMPLETO -->
+<div class="section-card">
+  <h2>Tabla de Posiciones</h2>
+  {% if ranking %}
+  <div class="ranking-full">
+    {% for r in ranking %}
+    <div class="ranking-item
+      {% if r.posicion == 1 %}rank-1
+      {% elif r.posicion == 2 %}rank-2
+      {% elif r.posicion == 3 %}rank-3{% endif %}
+      {% if r.usuario == session.get('usuario') %}my-row{% endif %}">
+
+      <div class="rank-medal">
+        {% if r.posicion == 1 %}<span class="medal">🥇</span>
+        {% elif r.posicion == 2 %}<span class="medal">🥈</span>
+        {% elif r.posicion == 3 %}<span class="medal">🥉</span>
+        {% else %}<span class="rank-num">#{{ r.posicion }}</span>{% endif %}
+      </div>
+
+      <div class="rank-info">
+        <div class="rank-name-full">
+          {{ r.nombre }}
+          {% if r.usuario == session.get('usuario') %}
+            <span class="you-badge">Tú</span>
+          {% endif %}
+        </div>
+        {% if meta > 0 %}
+        {% set user_prog = [r.total / meta * 100, 100] | min | round %}
+        <div class="rank-bar-full">
+          <div class="rank-fill
+            {% if r.posicion == 1 %}fill-gold
+            {% elif r.posicion == 2 %}fill-silver
+            {% elif r.posicion == 3 %}fill-bronze
+            {% else %}fill-default{% endif %}"
+            style="width: {{ user_prog }}%">
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="rank-amount-full">
+        <div class="amount-big">${{ "{:,.0f}".format(r.total) }}</div>
+        {% if meta > 0 %}
+        <div class="amount-pct">{{ [r.total / meta * 100, 100] | min | round }}% de la meta</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="empty-state">🙏 No hay datos de recaudación para esta semana aún.</p>
+  {% endif %}
+</div>
+{% endblock %}

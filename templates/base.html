@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Pastoral Ingeniería Comercial UC{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a href="{{ url_for('dashboard') }}" class="nav-brand">
+      <div class="nav-logo-wrap">
+        <img src="{{ url_for('static', filename='logo.png') }}"
+             alt="Logo Pastoral" class="nav-logo">
+      </div>
+      <div class="nav-brand-text">
+        Pastoral Ingeniería Comercial
+        <span>Pontificia Universidad Católica de Chile</span>
+      </div>
+    </a>
+
+    <div class="nav-links">
+      <a href="{{ url_for('dashboard') }}"
+         class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        🏠 Inicio
+      </a>
+      <a href="{{ url_for('ranking_page') }}"
+         class="nav-link {% if request.endpoint == 'ranking_page' %}active{% endif %}">
+        🏆 Ranking
+      </a>
+      <a href="{{ url_for('mis_aportes') }}"
+         class="nav-link {% if request.endpoint == 'mis_aportes' %}active{% endif %}">
+        💰 Mis Aportes
+      </a>
+      {% if session.get('rol') == 'admin' %}
+      <a href="{{ url_for('admin_panel') }}"
+         class="nav-link nav-admin {% if request.endpoint == 'admin_panel' %}active{% endif %}">
+        ⚙️ Admin
+      </a>
+      {% endif %}
+    </div>
+
+    <div class="nav-user">
+      <span class="user-badge">{{ session.get('nombre', session.get('usuario')) }}</span>
+      <a href="{{ url_for('logout') }}" class="btn-logout">Salir</a>
+    </div>
+  </nav>
+
+  <!-- FLASH MESSAGES -->
+  <div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for cat, msg in messages %}
+        <div class="alert alert-{{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endwith %}
+  </div>
+
+  <!-- CONTENT -->
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <img src="{{ url_for('static', filename='logo.png') }}"
+         alt="Logo" class="footer-logo">
+    <span>Pastoral Ingeniería Comercial UC &bull; 2026 &bull; Con amor y fe</span>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

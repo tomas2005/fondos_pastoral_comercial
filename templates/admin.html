@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+{% block title %}Panel Admin - Pastoral Ingeniería Comercial UC{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <img src="{{ url_for('static', filename='logo.png') }}"
+       alt="Logo" class="page-header-logo">
+  <div class="page-header-text">
+    <h1>⚙️ Panel de Administración</h1>
+    <p class="subtitle">
+      Semana activa:
+      {% if semana_activa %}
+        <strong>{{ semana_activa.titulo }}</strong>
+        — Meta: ${{ "{:,.0f}".format(semana_activa.meta | float) }}
+      {% else %}
+        <em>Ninguna</em>
+      {% endif %}
+    </p>
+  </div>
+</div>
+
+<!-- STATS ADMIN -->
+<div class="stats-grid stats-3">
+  <div class="stat-card card-personal">
+    <div class="stat-icon">👥</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ users | length }}</div>
+      <div class="stat-label">Participantes activos</div>
+    </div>
+  </div>
+  <div class="stat-card card-global">
+    <div class="stat-icon">💰</div>
+    <div class="stat-info">
+      <div class="stat-value">${{ "{:,.0f}".format(total_recaudado) }}</div>
+      <div class="stat-label">Recaudado esta semana</div>
+    </div>
+  </div>
+  <div class="stat-card card-position">
+    <div class="stat-icon">📋</div>
+    <div class="stat-info">
+      <div class="stat-value">{{ aportes | length }}</div>
+      <div class="stat-label">Total de aportes</div>
+    </div>
+  </div>
+</div>
+
+<div class="admin-grid">
+
+  <!-- REGISTRAR APORTE -->
+  <div class="section-card">
+    <h2>💸 Registrar Aporte</h2>
+    <form method="POST" action="{{ url_for('registrar_aporte') }}" class="admin-form">
+      <div class="form-group">
+        <label>Participante</label>
+        <select name="usuario" required>
+          <option value="">— Seleccionar —</option>
+          {% for u in users %}
+            {% if u.activo in ('True', 'true', True, '1') %}
+            <option value="{{ u.usuario }}">{{ u.nombre }}</option>
+            {% endif %}
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Semana</label>
+        <select name="semana_id" required>
+          <option value="">— Seleccionar —</option>
+          {% for s in semanas %}
+            <option value="{{ s.id }}" {% if semana_activa and s.id == semana_activa.id %}selected{% endif %}>
+              {{ s.titulo }}{% if s.activa %} ✓{% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Monto ($)</label>
+          <input type="number" name="monto" placeholder="Ej: 50000" min="1" step="any" required>
+        </div>
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" name="fecha">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción (opcional)</label>
+        <input type="text" name="descripcion" placeholder="Ej: Rifa, donación, evento...">
+      </div>
+      <button type="submit" class="btn-primary">✅ Registrar Aporte</button>
+    </form>
+  </div>
+
+  <!-- NUEVA SEMANA / META -->
+  <div class="section-card">
+    <h2>📅 Nueva Semana / Meta</h2>
+    <form method="POST" action="{{ url_for('crear_semana') }}" class="admin-form">
+      <div class="form-group">
+        <label>Título</label>
+        <input type="text" name="titulo" placeholder="Ej: Semana 2 - Campaña Navidad" required>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea name="descripcion" placeholder="Descripción de la semana..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Meta ($)</label>
+        <input type="number" name="meta" placeholder="Ej: 500000" min="1" required>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Fecha inicio</label>
+          <input type="date" name="fecha_inicio">
+        </div>
+        <div class="form-group">
+          <label>Fecha fin</label>
+          <input type="date" name="fecha_fin">
+        </div>
+      </div>
+      <label class="checkbox-label">
+        <input type="checkbox" name="activar" checked>
+        Activar esta semana (desactiva la actual)
+      </label>
+      <button type="submit" class="btn-primary">🚀 Crear Semana</button>
+    </form>
+  </div>
+
+  <!-- NUEVO USUARIO -->
+  <div class="section-card">
+    <h2>👤 Agregar Participante</h2>
+    <form method="POST" action="{{ url_for('crear_usuario') }}" class="admin-form">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" name="nombre" placeholder="Juan Pérez" required>
+      </div>
+      <div class="form-group">
+        <label>Usuario (para login)</label>
+        <input type="text" name="usuario" placeholder="juanperez" required pattern="[a-zA-Z0-9_]+">
+      </div>
+      <div class="form-group">
+        <label>Contraseña inicial</label>
+        <input type="text" name="password" placeholder="Contraseña temporal" required>
+      </div>
+      <div class="form-group">
+        <label>Rol</label>
+        <select name="rol">
+          <option value="usuario">Participante</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <button type="submit" class="btn-primary">➕ Agregar</button>
+    </form>
+  </div>
+
+</div>
+
+<!-- RANKING ADMIN -->
+<div class="section-card">
+  <div class="section-header">
+    <h2>🏆 Ranking Actual</h2>
+    {% if semana_activa %}
+    <span class="badge-active">{{ semana_activa.titulo }}</span>
+    {% endif %}
+  </div>
+  {% if ranking %}
+  <div class="ranking-mini">
+    {% for r in ranking %}
+    <div class="ranking-row">
+      <div class="rank-pos">
+        {% if r.posicion == 1 %}🥇{% elif r.posicion == 2 %}🥈{% elif r.posicion == 3 %}🥉
+        {% else %}#{{ r.posicion }}{% endif %}
+      </div>
+      <div class="rank-name">{{ r.nombre }}</div>
+      {% if semana_activa %}
+      {% set meta = semana_activa.meta | float %}
+      <div class="rank-bar-mini">
+        {% if meta > 0 %}
+        <div class="mini-fill" style="width: {{ [r.total / meta * 100, 100] | min | round }}%"></div>
+        {% endif %}
+      </div>
+      {% endif %}
+      <div class="rank-amount">${{ "{:,.0f}".format(r.total) }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="empty-state">Sin aportes registrados esta semana.</p>
+  {% endif %}
+</div>
+
+<!-- GESTIÓN DE SEMANAS -->
+<div class="section-card">
+  <h2>📋 Semanas</h2>
+  <table class="table">
+    <thead>
+      <tr><th>ID</th><th>Título</th><th>Meta</th><th>Período</th><th>Estado</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for s in semanas | reverse %}
+      <tr class="{% if s.activa %}row-active{% endif %}">
+        <td>{{ s.id }}</td>
+        <td>{{ s.titulo }}</td>
+        <td>${{ "{:,.0f}".format(s.meta | float) }}</td>
+        <td>{{ s.fecha_inicio or '—' }} → {{ s.fecha_fin or '—' }}</td>
+        <td>
+          {% if s.activa %}
+            <span class="badge badge-success">✓ Activa</span>
+          {% else %}
+            <span class="badge badge-gray">Inactiva</span>
+          {% endif %}
+        </td>
+        <td class="action-cell">
+          {% if not s.activa %}
+          <a href="{{ url_for('activar_semana', semana_id=s.id) }}"
+             class="btn-sm btn-success">Activar</a>
+          {% endif %}
+          <a href="{{ url_for('eliminar_semana', semana_id=s.id) }}"
+             class="btn-sm btn-danger"
+             onclick="return confirm('¿Eliminar la semana {{ s.titulo }}?')">Eliminar</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- GESTIÓN DE USUARIOS -->
+<div class="section-card">
+  <h2>👥 Participantes</h2>
+  <table class="table">
+    <thead>
+      <tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for u in users %}
+      <tr>
+        <td><code>{{ u.usuario }}</code></td>
+        <td>{{ u.nombre }}</td>
+        <td>{{ u.rol }}</td>
+        <td>
+          {% if u.activo in ('True', 'true', True, '1') %}
+            <span class="badge badge-success">Activo</span>
+          {% else %}
+            <span class="badge badge-danger">Inactivo</span>
+          {% endif %}
+        </td>
+        <td class="action-cell">
+          <a href="{{ url_for('toggle_usuario', username=u.usuario) }}" class="btn-sm btn-warning">
+            {% if u.activo in ('True', 'true', True, '1') %}Desactivar{% else %}Activar{% endif %}
+          </a>
+          <a href="{{ url_for('eliminar_usuario', username=u.usuario) }}"
+             class="btn-sm btn-danger"
+             onclick="return confirm('¿Eliminar a {{ u.nombre }}?')">Eliminar</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ÚLTIMOS APORTES -->
+<div class="section-card">
+  <h2>💸 Últimos Aportes Registrados</h2>
+  {% if aportes %}
+  <table class="table">
+    <thead>
+      <tr><th>Fecha</th><th>Participante</th><th>Semana</th><th>Descripción</th><th>Monto</th><th>Acción</th></tr>
+    </thead>
+    <tbody>
+      {% for a in aportes | reverse %}
+      <tr>
+        <td>{{ a.fecha }}</td>
+        <td>{{ a.usuario }}</td>
+        <td>{{ a.semana_id }}</td>
+        <td>{{ a.descripcion or '—' }}</td>
+        <td class="amount-cell">${{ "{:,.0f}".format(a.monto | float) }}</td>
+        <td>
+          <a href="{{ url_for('eliminar_aporte', aporte_id=a.id) }}"
+             class="btn-sm btn-danger"
+             onclick="return confirm('¿Eliminar este aporte?')">✕</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <p class="empty-state">Sin aportes registrados aún.</p>
+  {% endif %}
+</div>
+{% endblock %}
