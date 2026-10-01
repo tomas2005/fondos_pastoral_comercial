@@ -547,7 +547,8 @@ def api_ranking():
     ranking = get_ranking(semana_id)
     return jsonify(ranking)
 
-
+# INICIALIZACIÓN
+init_excel()
 # ──────────────────────────────────────────────────────────────────────
 # MAIN
 # ──────────────────────────────────────────────────────────────────────
